@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>OchilarDimLayer</title>
+    <style>
+      html, body {
+        margin: 0; padding: 0;
+        height: 100%; width: 100%;
+        background: #000;
+        overflow: hidden;
+      }
+      body.drift-mode {
+        /* Mid-gray instead of black during drift — at 25% X11 opacity
+           a gray window barely tints the desktop, leaving only the blob
+           gradient as the visibly distinct element. */
+        background: #808080;
+      }
+      #blob {
+        position: absolute;
+        width: 360px; height: 360px;
+        left: 0; top: 0;
+        background: radial-gradient(
+          circle at 50% 50%,
+          var(--c, rgb(180, 210, 255)) 0%,
+          rgba(128,128,128,0) 65%
+        );
+        filter: blur(10px);
+        opacity: 0;
+        will-change: transform, opacity;
+        transform: translate(-400px, -400px);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="blob"></div>
+    <script>
+      const { listen } = window.__TAURI__.event;
+      const blob = document.getElementById("blob");
+      listen("drift:start", (e) => {
+        document.body.classList.add("drift-mode");
+        const { color, fromX, fromY, toX, toY, duration } = e.payload;
+        // Blob gradient fades to mid-gray (same as drift-mode body bg) so
+        // edges blend smoothly with the rest of the window.
+        blob.style.background = `radial-gradient(
+          circle at 50% 50%,
+          rgb(${color[0]},${color[1]},${color[2]}) 0%,
+          rgba(128,128,128,0) 65%
+        )`;
+        const anim = blob.animate(
+          [
+            { transform: `translate(${fromX}px, ${fromY}px)`, opacity: 0 },
+            { transform: `translate(${fromX + (toX - fromX) * 0.15}px, ${fromY + (toY - fromY) * 0.15}px)`, opacity: 1, offset: 0.15 },
+            { transform: `translate(${fromX + (toX - fromX) * 0.85}px, ${fromY + (toY - fromY) * 0.85}px)`, opacity: 1, offset: 0.85 },
+            { transform: `translate(${toX}px, ${toY}px)`, opacity: 0 },
+          ],
+          { duration, easing: "ease-in-out", fill: "forwards" },
+        );
+        anim.onfinish = () => {
+          blob.style.opacity = "0";
+          // After drift ends, return body bg to black for dim.
+          document.body.classList.remove("drift-mode");
+        };
+      });
+      listen("drift:clear", () => {
+        blob.style.opacity = "0";
+        document.body.classList.remove("drift-mode");
+      });
+      // dim:flash → make sure we're in black bg mode
+      listen("dim:flash", () => {
+        document.body.classList.remove("drift-mode");
+      });
+    </script>
+  </body>
+</html>

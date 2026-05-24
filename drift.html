@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>OchilarDriftLayer</title>
+    <style>
+      html, body {
+        margin: 0; padding: 0;
+        height: 100%; width: 100%;
+        background: #000;
+        overflow: hidden;
+      }
+      /* Blob animates across the fullscreen window via WAAPI. The X11
+         SHAPE mask (driven from Rust along the SAME path) clips the
+         window to a soft circle that tracks the blob — so only the
+         colored blob is visible on screen. */
+      #blob {
+        position: absolute;
+        width: 340px; height: 340px;
+        left: 0; top: 0;
+        /* Gradient fades to transparent at ~96% so the colored blob fills
+           almost the entire SHAPE circle — eliminates the black body-bg
+           ring between the blob edge and the shape clip. */
+        background: radial-gradient(
+          circle at 50% 50%,
+          var(--c, rgb(180, 210, 255)) 0%,
+          var(--c, rgb(180, 210, 255)) 12%,
+          rgba(0,0,0,0) 96%
+        );
+        filter: blur(14px);
+        will-change: transform;
+        transform: translate(-2000px, -2000px);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="blob"></div>
+    <script>
+      const { listen } = window.__TAURI__.event;
+      const blob = document.getElementById("blob");
+      listen("drift:start", (e) => {
+        const { color, fromX, fromY, toX, toY, duration, size } = e.payload;
+        const s = size || 340;
+        blob.style.width = s + "px";
+        blob.style.height = s + "px";
+        blob.style.setProperty("--c", `rgb(${color[0]},${color[1]},${color[2]})`);
+        const off = s / 2; // half of blob box → centre on path coordinate
+        blob.animate(
+          [
+            { transform: `translate(${fromX - off}px, ${fromY - off}px)` },
+            { transform: `translate(${toX - off}px, ${toY - off}px)` },
+          ],
+          { duration, easing: "ease-in-out", fill: "forwards" },
+        );
+      });
+    </script>
+  </body>
+</html>
