@@ -38,20 +38,44 @@
     <script>
       const { listen } = window.__TAURI__.event;
       const blob = document.getElementById("blob");
+
+      // Dwell-then-cross easing: slow near the entry edge (covers only
+      // DWELL_DIST of the path during the dwell phase), then accelerates
+      // across. MUST stay identical to `driftEase` in src-tauri/src/lib.rs,
+      // or the SHAPE clip mask and the blob drift apart and the black-ring
+      // silhouette returns.
+      const DWELL_DIST = 0.13;
+      function driftEase(t, dwellFrac) {
+        t = Math.max(0, Math.min(1, t));
+        if (t <= dwellFrac) {
+          const u = dwellFrac > 0 ? t / dwellFrac : 1;
+          return DWELL_DIST * u * u;
+        }
+        const u = (t - dwellFrac) / (1 - dwellFrac);
+        const e = 1 - (1 - u) * (1 - u); // ease-out: fast right after dwell
+        return DWELL_DIST + (1 - DWELL_DIST) * e;
+      }
+
       listen("drift:start", (e) => {
-        const { color, fromX, fromY, toX, toY, duration, size } = e.payload;
+        const { color, fromX, fromY, toX, toY, duration, size, dwellFrac } = e.payload;
         const s = size || 340;
+        const df = typeof dwellFrac === "number" ? dwellFrac : 0.55;
         blob.style.width = s + "px";
         blob.style.height = s + "px";
         blob.style.setProperty("--c", `rgb(${color[0]},${color[1]},${color[2]})`);
         const off = s / 2; // half of blob box → centre on path coordinate
-        blob.animate(
-          [
-            { transform: `translate(${fromX - off}px, ${fromY - off}px)` },
-            { transform: `translate(${toX - off}px, ${toY - off}px)` },
-          ],
-          { duration, easing: "ease-in-out", fill: "forwards" },
-        );
+        // Sample driftEase into linear keyframes; Rust evaluates the same curve
+        // continuously, so the two paths track within the blob's blur margin.
+        const N = 24;
+        const frames = [];
+        for (let i = 0; i <= N; i++) {
+          const t = i / N;
+          const d = driftEase(t, df);
+          const x = fromX + (toX - fromX) * d - off;
+          const y = fromY + (toY - fromY) * d - off;
+          frames.push({ offset: t, transform: `translate(${x}px, ${y}px)`, easing: "linear" });
+        }
+        blob.animate(frames, { duration, fill: "forwards" });
       });
     </script>
   </body>

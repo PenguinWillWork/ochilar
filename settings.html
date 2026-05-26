@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ochilar Settings</title>
+    <style>
+      :root { color-scheme: dark; }
+      html, body {
+        margin: 0; background: #16181d; color: #e6e6e6;
+        font-family: system-ui, sans-serif; font-size: 13px; user-select: none;
+      }
+      body { padding: 18px 20px; }
+      h1 { margin: 0 0 2px; font-size: 17px; }
+      .intro { color: #8a8f99; font-size: 11.5px; line-height: 1.5; margin: 0 0 16px; }
+      .sect { border-top: 1px solid #262a32; padding: 12px 0 4px; }
+      .sect h2 { margin: 0 0 8px; font-size: 12px; color: #9aa0ab; text-transform: uppercase; letter-spacing: .6px; }
+      .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 9px 0; }
+      .row .lab { flex: 1; }
+      .row .hint { display: block; color: #71757e; font-size: 10.5px; margin-top: 2px; }
+      input[type="range"] { width: 150px; }
+      input[type="time"], input[type="number"] {
+        background: #23262d; color: #e6e6e6; border: 1px solid #3a3f4a;
+        border-radius: 5px; padding: 3px 6px; font-size: 12px; width: 70px;
+      }
+      .switch { position: relative; width: 38px; height: 21px; flex: none; display: inline-block; }
+      .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+      .slider { position: absolute; inset: 0; background: #3a3f4a; border-radius: 21px; cursor: pointer; transition: .2s; }
+      .slider::before { content: ""; position: absolute; height: 15px; width: 15px; left: 3px; top: 3px; background: #ccc; border-radius: 50%; transition: .2s; }
+      .switch input:checked + .slider { background: #3a7d52; }
+      .switch input:checked + .slider::before { transform: translateX(17px); background: #e6f5ec; }
+      .btns { display: flex; gap: 8px; margin-top: 6px; }
+      button {
+        background: #2a2e37; color: #e6e6e6; border: 1px solid #3a3f4a;
+        padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
+      }
+      button:hover { background: #343945; }
+      .val { color: #9aa0ab; font-size: 11px; min-width: 34px; text-align: right; }
+      .grp { display: flex; align-items: center; gap: 8px; }
+      .disabled { opacity: .4; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <h1>Ochilar Settings</h1>
+    <p class="intro">
+      Ochilar nudges your eyes to rest. A colored line along the top edge tracks
+      how long you've worked (green → red). Brief screen <b>blinks</b> prompt you
+      to blink; soft <b>drifting</b> shapes pull your gaze to the screen's edge.
+      All cues are passive — nothing to click.
+    </p>
+
+    <div class="sect">
+      <div class="row">
+        <span class="lab">Enabled<span class="hint">Master switch for all cues</span></span>
+        <label class="switch"><input type="checkbox" id="enabled" /><span class="slider"></span></label>
+      </div>
+      <div class="row">
+        <span class="lab">Cue intensity<span class="hint">How strong blinks & drifts appear</span></span>
+        <div class="grp"><input type="range" id="intensity" min="0" max="100" /><span class="val" id="intensity-v"></span></div>
+      </div>
+      <div class="row">
+        <span class="lab">Work session length<span class="hint">Minutes of work → full fatigue</span></span>
+        <div class="grp"><input type="number" id="sessionLengthMin" min="5" max="120" step="5" /><span class="val">min</span></div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h2>Blink prompts</h2>
+      <div class="row">
+        <span class="lab">Enabled<span class="hint">5 gentle pulses to trigger a blink</span></span>
+        <label class="switch"><input type="checkbox" id="blinkEnabled" /><span class="slider"></span></label>
+      </div>
+      <div class="row">
+        <span class="lab">Every<span class="hint">Minutes between blink bursts</span></span>
+        <div class="grp"><input type="number" id="blinkIntervalMin" min="1" max="30" step="0.5" /><span class="val">min</span></div>
+      </div>
+      <div class="btns"><button id="prev-blink">Preview blink</button></div>
+    </div>
+
+    <div class="sect">
+      <h2>Drift cue <span style="color:#71757e;font-weight:400;text-transform:none;letter-spacing:0">· optional</span></h2>
+      <div class="row">
+        <span class="lab">Enabled<span class="hint">Optional. Fires on its own after a sustained stretch of focused work — no timing to set. A soft shape briefly switches your attention to the screen edge. Aesthetic / a gentle nudge, not a strain remedy.</span></span>
+        <label class="switch"><input type="checkbox" id="driftEnabled" /><span class="slider"></span></label>
+      </div>
+      <div class="btns"><button id="prev-drift">Preview drift</button></div>
+    </div>
+
+    <div class="sect">
+      <h2>Edge line</h2>
+      <div class="row">
+        <span class="lab">Show edge line<span class="hint">Top-edge fatigue indicator</span></span>
+        <label class="switch"><input type="checkbox" id="edgeEnabled" /><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h2>Screen comfort</h2>
+      <div class="row">
+        <span class="lab">Adaptive warmth<span class="hint">Whole screen gently warms &amp; dims as fatigue builds, eases back as you rest. Passive — nothing to do.</span></span>
+        <label class="switch"><input type="checkbox" id="adaptiveWarmth" /><span class="slider"></span></label>
+      </div>
+      <div class="btns"><button id="prev-warmth">Preview warmth</button></div>
+    </div>
+
+    <div class="sect">
+      <h2>Schedule</h2>
+      <div class="row">
+        <span class="lab">Active hours only<span class="hint">Run cues only within a time window</span></span>
+        <label class="switch"><input type="checkbox" id="activeHoursEnabled" /><span class="slider"></span></label>
+      </div>
+      <div class="row" id="hours-row">
+        <span class="lab">From → to</span>
+        <div class="grp"><input type="time" id="activeStart" /><input type="time" id="activeEnd" /></div>
+      </div>
+      <div class="row">
+        <span class="lab">Start at login</span>
+        <label class="switch"><input type="checkbox" id="startAtLogin" /><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <script type="module" src="/src/settings_page.ts"></script>
+  </body>
+</html>

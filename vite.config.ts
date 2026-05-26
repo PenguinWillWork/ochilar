@@ -8,6 +8,20 @@ export default defineConfig(async () => ({
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
+  // Multi-page build: every overlay window has its own HTML entry point.
+  // Without listing them here, `vite build` only bundles index.html and the
+  // other windows (debug/dim/drift) load blank in the production app.
+  build: {
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        control: "control.html",
+        settings: "settings.html",
+        dim: "dim.html",
+        drift: "drift.html",
+      },
+    },
+  },
   // 1. prevent Vite from obscuring rust errors
   clearScreen: false,
   // 2. tauri expects a fixed port, fail if that port is not available
