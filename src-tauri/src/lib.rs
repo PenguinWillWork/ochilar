@@ -23,6 +23,9 @@ fn set_window_opacity_xprop(window_title: &str, opacity: f32) {
     let clamped = opacity.clamp(0.0, 1.0);
     let value: u32 = (clamped * u32::MAX as f32) as u32;
     let hex = format!("0x{:08x}", value);
+    // .status() waits for xprop to exit and reaps it. Using .spawn() and
+    // dropping the Child would leak a zombie process on every call — and this
+    // fires ~10× per blink burst, many times a session. xprop exits in ~1ms.
     let _ = Command::new("xprop")
         .args([
             "-name",
@@ -34,7 +37,7 @@ fn set_window_opacity_xprop(window_title: &str, opacity: f32) {
             "_NET_WM_WINDOW_OPACITY",
             &hex,
         ])
-        .spawn();
+        .status();
 }
 
 const OVERLAY_WINDOW_TITLE: &str = "OchilarOverlay";
@@ -506,15 +509,18 @@ fn drift_start(
     let side = side.clamp(120, 700);
     let max_opacity = max_opacity.clamp(0.0, 1.0);
     let dwell_frac = dwell_frac.clamp(0.0, 0.95);
-    // Cancel any in-flight drift.
-    {
-        let mut guard = DRIFT_RUNNING.lock().unwrap();
+    // Cancel any in-flight drift and install our run flag in a SINGLE lock
+    // scope, so two concurrent drift_start calls can't both end up driving the
+    // window, and there's no unwrap on a None/poisoned lock.
+    let running = {
+        let mut guard = DRIFT_RUNNING.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(flag) = guard.take() {
             flag.store(false, Ordering::SeqCst);
         }
-        *guard = Some(Arc::new(AtomicBool::new(true)));
-    }
-    let running = DRIFT_RUNNING.lock().unwrap().clone().unwrap();
+        let flag = Arc::new(AtomicBool::new(true));
+        *guard = Some(flag.clone());
+        flag
+    };
 
     thread::spawn(move || {
         let (conn, screen_num) = match x11rb::connect(None) {
