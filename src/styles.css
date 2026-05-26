@@ -12,61 +12,21 @@ html, body {
   position: fixed; left: 0; right: 0; top: 0; height: 2px;
   background: #3ddc84; opacity: 0.55;
   pointer-events: none; z-index: 10;
-  transition: background-color 2s linear, opacity 2s linear;
+  transition: background-color 2s linear;
 }
-/* Soft breathing pulse when fatigue is high (red zone). The animation
-   runs on the compositor thread (like the color transition), so it
-   renders smoothly on the overlay. Toggled via .pulse from JS. */
+/* Soft breathing pulse in the red zone. Animates the COLOUR, not opacity — a
+   per-pixel alpha change wouldn't flush on this compositor, but RGB does. */
 @keyframes edgePulse {
-  0%, 100% { opacity: 0.6; }
-  50%      { opacity: 0.12; }
+  0%, 100% { background-color: #ff5a5a; }
+  50%      { background-color: #5a1414; }
 }
 #edge.pulse {
-  animation: edgePulse 1.8s ease-in-out infinite;
-  /* don't let the 2s opacity transition fight the animation */
-  transition: background-color 2s linear;
+  animation: edgePulse 1.6s ease-in-out infinite;
 }
 #edgeNotch {
   position: fixed; top: 0; width: 6px; height: 2px;
   background: #000; pointer-events: none; z-index: 11;
   transition: left 2s linear;
-}
-
-/* Drift — single element, restyled on each trigger. */
-#drift {
-  position: fixed; left: 0; top: 0;
-  pointer-events: none; z-index: 9;
-  opacity: 0;
-  display: none;
-  will-change: transform, opacity;
-}
-
-/* Trail wiper — briefly paints fullscreen at full opacity to force the
-   compositor to flush every pixel in the overlay window, clearing the
-   stale per-pixel-alpha trails left by the drift animation. Visible
-   for only ~50ms (≈3 frames) → user perceives at most a faint flicker. */
-#trail-wiper {
-  position: fixed; inset: 0;
-  background: #808080;
-  pointer-events: none; z-index: 9;
-  display: none;
-}
-
-/* Global micro-dim. */
-#dim {
-  position: fixed; inset: 0;
-  background: #000;
-  opacity: 0;
-  display: none;
-  pointer-events: none; z-index: 8;
-  will-change: opacity, transform;
-  /* Force GPU layer promotion. Without this, WebKit composites dim
-     into the main page surface — which KWin doesn't flush on this
-     transparent overlay. Drift "works" because its filter:blur
-     already creates a separate compositor layer. */
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  filter: blur(0.01px);
 }
 
 #hint {
