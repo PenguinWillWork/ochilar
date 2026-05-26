@@ -17,6 +17,7 @@ export default defineConfig(async () => ({
         main: "index.html",
         control: "control.html",
         settings: "settings.html",
+        howitworks: "howitworks.html",
         dim: "dim.html",
         drift: "drift.html",
       },

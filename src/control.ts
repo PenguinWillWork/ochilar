@@ -2,6 +2,7 @@
 // the overlay via the "ctrl:stats" event.
 import { listen, emit } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
+import { loadSettings, saveSettings } from "./settings";
 
 const $ = (id: string) => document.getElementById(id)!;
 const btnPause = $("btn-pause") as HTMLButtonElement;
@@ -21,6 +22,25 @@ function reflectPause() {
 btnSettings.onclick = () => {
   invoke("open_settings").catch(() => {});
 };
+
+$("howlink").onclick = () => {
+  invoke("open_howitworks").catch(() => {});
+};
+
+// First run: show the explainer once, then remember — but only mark it seen
+// after the window actually opened, so a failed open retries next launch
+// instead of suppressing it forever.
+(async () => {
+  const s = await loadSettings();
+  if (!s.seenIntro) {
+    try {
+      await invoke("open_howitworks");
+      saveSettings({ ...s, seenIntro: true });
+    } catch {
+      /* leave seenIntro false; try again next launch */
+    }
+  }
+})();
 
 // Keep the button in sync if the overlay toggles pause from elsewhere (tray).
 listen<{ paused: boolean }>("pause-state", (e) => {

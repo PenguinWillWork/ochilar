@@ -28,6 +28,8 @@
       .bar > div { height: 100%; border-radius: 4px; transition: width .5s, background .5s; }
       .line { color: #aab; font-size: 11.5px; line-height: 1.7; font-variant-numeric: tabular-nums; }
       .zone { font-weight: 600; }
+      #howlink { display: inline-block; margin-top: 10px; color: #7f95c0; font-size: 11.5px; cursor: pointer; }
+      #howlink:hover { color: #a8bce0; text-decoration: underline; }
     </style>
   </head>
   <body>
@@ -45,6 +47,7 @@
         <span id="restline">working</span> · activity <span id="activity">–</span><br>
         next blink <span id="nblink">–</span> · next drift <span id="ndrift">–</span>
       </div>
+      <a id="howlink">How it works</a>
     </div>
     <script type="module" src="/src/control.ts"></script>
   </body>

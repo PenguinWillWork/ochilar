@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>How Ochilar works</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0; background: #16181d; color: #e6e6e6;
+        font-family: system-ui, sans-serif; font-size: 13.5px; line-height: 1.5;
+        user-select: none;
+      }
+      body { padding: 22px 24px 18px; }
+      h1 { margin: 0 0 4px; font-size: 20px; }
+      .lead { color: #9aa0ab; margin: 0 0 18px; font-size: 12.5px; }
+      .item { display: flex; gap: 11px; margin: 14px 0; }
+      .dot { flex: none; width: 11px; height: 11px; border-radius: 50%; margin-top: 4px; }
+      .item .name { font-weight: 600; }
+      .item .body { color: #b9bec7; font-size: 12.5px; }
+      .item .body .opt { color: #71757e; font-weight: 400; }
+      .section { border-top: 1px solid #262a32; margin-top: 18px; padding-top: 14px; }
+      .section h2 { margin: 0 0 6px; font-size: 12px; color: #9aa0ab; text-transform: uppercase; letter-spacing: .6px; }
+      .section p { margin: 0; color: #b9bec7; font-size: 12.5px; }
+      .footer { margin-top: 22px; display: flex; justify-content: flex-end; }
+      button {
+        background: #2f6b46; color: #eafff1; border: 1px solid #3a7d52;
+        padding: 9px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+      }
+      button:hover { background: #357c51; }
+      em { color: #e6e6e6; font-style: normal; font-weight: 600; }
+      [hidden] { display: none; }
+      /* Second screen: the disclaimer acknowledgement */
+      #view-disclaim { display: flex; flex-direction: column; min-height: calc(100vh - 40px); }
+      #view-disclaim .grow { flex: 1; }
+      #view-disclaim p { color: #cdd2da; font-size: 13.5px; line-height: 1.6; margin: 0 0 12px; }
+    </style>
+  </head>
+  <body>
+    <div id="view-info">
+      <h1>How Ochilar works</h1>
+      <p class="lead">Break reminders nag, block, or force a pause — so they only work if you're disciplined. Ochilar doesn't ask for any: it runs quietly alongside your work and does its bit while you keep going.</p>
+
+      <div class="item">
+        <span class="dot" style="background:#3ddc84"></span>
+        <div><div class="name">Edge line</div>
+          <div class="body">A thin line along the top edge. Instead of being an annoying timer, it fills green → amber → red as you actually work — and quietly drains back when you step away and rest. It tracks real fatigue, not the clock.</div></div>
+      </div>
+
+      <div class="item">
+        <span class="dot" style="background:#b0d4ff"></span>
+        <div><div class="name">Blink reminders</div>
+          <div class="body">Every few minutes, a few soft screen pulses. Staring at a screen cuts your blink rate by more than half — the main cause of dry, tired eyes — so this gently prompts a blink.</div></div>
+      </div>
+
+      <div class="item">
+        <span class="dot" style="background:#f0b46e"></span>
+        <div><div class="name">Screen warmth</div>
+          <div class="body">As your session adds up, the whole screen slowly warms and dims a touch, then eases back when you rest.</div></div>
+      </div>
+
+      <div class="item">
+        <span class="dot" style="background:#c2a8ff"></span>
+        <div><div class="name">Drift <span class="opt">· optional, off by default</span></div>
+          <div class="body">After a long focused stretch, a soft shape drifts in from the edge to pull your gaze for a moment. A gentle attention switch.</div></div>
+      </div>
+
+      <div class="section">
+        <h2>What actually helps</h2>
+        <p>Three things ease tired eyes: blinking more, less glare, and looking far away now and then. <em>Ochilar helps with the first two, automatically.</em> The far-away look is the one part no app can do for you — so glance out a window once in a while too.</p>
+      </div>
+
+      <div class="section">
+        <h2>Privacy</h2>
+        <p>No accounts, no telemetry — nothing ever leaves your computer. To tell whether you're working or resting, Ochilar just checks whether the mouse is moving and how long since your last key or click. It never sees what you type.</p>
+      </div>
+
+      <div class="footer">
+        <button id="got-it" type="button">Got it</button>
+      </div>
+    </div>
+
+    <div id="view-disclaim" hidden>
+      <h1>One thing to be clear on</h1>
+      <p><em>Ochilar does not prevent eye damage and does not improve your vision.</em></p>
+      <p>It's a comfort aid for tired, dry eyes — not a medical device or a treatment. Persistent eye pain, headaches, or changes in your eyesight are for an optometrist, not an app.</p>
+      <div class="grow"></div>
+      <div class="footer">
+        <button id="understand" type="button">I understand</button>
+      </div>
+    </div>
+
+    <script>
+      const byId = (id) => document.getElementById(id);
+      byId("got-it").onclick = () => {
+        byId("view-info").hidden = true;
+        byId("view-disclaim").hidden = false;
+      };
+      byId("understand").onclick = () => {
+        window.__TAURI__.window.getCurrentWindow().close();
+      };
+    </script>
+  </body>
+</html>

@@ -135,6 +135,21 @@ fn open_settings(app: tauri::AppHandle) {
         .build();
 }
 
+// Open (or focus) the "how it works" explainer window.
+#[tauri::command]
+fn open_howitworks(app: tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window("howitworks") {
+        let _ = w.show();
+        let _ = w.set_focus();
+        return;
+    }
+    let _ = WebviewWindowBuilder::new(&app, "howitworks", WebviewUrl::App("howitworks.html".into()))
+        .title("How Ochilar works")
+        .inner_size(460.0, 640.0)
+        .resizable(true)
+        .build();
+}
+
 // Enable/disable launch at login via an XDG autostart .desktop file.
 #[tauri::command]
 fn set_autostart(enable: bool) {
@@ -714,6 +729,7 @@ pub fn run() {
             load_settings,
             save_settings,
             open_settings,
+            open_howitworks,
             set_autostart,
             set_tray_zone,
             set_screen_gamma,

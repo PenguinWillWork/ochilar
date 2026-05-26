@@ -17,6 +17,7 @@ export interface Settings {
   activeHoursEnabled: boolean;
   activeStart: string; // "HH:MM"
   activeEnd: string; // "HH:MM"
+  seenIntro: boolean; // first-run "how it works" shown
 }
 
 export const DEFAULTS: Settings = {
@@ -32,6 +33,7 @@ export const DEFAULTS: Settings = {
   activeHoursEnabled: false,
   activeStart: "09:00",
   activeEnd: "18:00",
+  seenIntro: false,
 };
 
 export async function loadSettings(): Promise<Settings> {
