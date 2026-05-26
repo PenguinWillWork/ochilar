@@ -93,7 +93,7 @@ pollSystemIdle();
 
 // Classify the user's current activity from idle time + recent cursor motion.
 // Lets drift fire only when the user isn't deeply focused (see tickDrift).
-type Activity = "idle" | "typing" | "confined" | "free";
+type Activity = "idle" | "focused" | "confined" | "free";
 // Roaming must persist this long before it counts as *leaving* focus, so one
 // quick mouse move doesn't drop you out of "confined". Entering focus is
 // instant (settling back in resumes accumulation immediately).
@@ -114,8 +114,10 @@ function activityState(): Activity {
   }
   const spreadX = maxX - minX, spreadY = maxY - minY;
   const inputActive = state.idleMs < 3000;
-  // Mouse essentially parked while input continues → typing.
-  if (inputActive && spreadX < 60 && spreadY < 60) { rawFreeSince = 0; return "typing"; }
+  // Input continues while the mouse is essentially parked → focused (typically
+  // typing, inferred without reading any keys: input is happening but the
+  // cursor isn't the source).
+  if (inputActive && spreadX < 60 && spreadY < 60) { rawFreeSince = 0; return "focused"; }
   if (spreadX > 750 || spreadY > 600) {
     // Ranges across a large area → roaming, but require it to persist so a
     // single flick across the screen doesn't drop you out of focus.
@@ -268,10 +270,10 @@ function tickDrift(now: number) {
     return;
   }
   const act = activityState();
-  const focused = act === "typing" || act === "confined";
+  const focused = act === "focused" || act === "confined";
   if (focused) {
     notFocusedSince = 0;
-    focusMs += dt; // typing and confined both count as focused time
+    focusMs += dt; // focused and confined both count as focused time
   } else {
     // Not focused: ignore short interruptions (grace); only a sustained
     // break (real stop / stepped away) resets the accumulated focus.

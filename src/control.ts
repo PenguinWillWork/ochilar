@@ -36,7 +36,7 @@ interface Stats {
   recoveryRate: number;
   nextBlinkMs: number;
   nextDriftMs: number;
-  activity: "idle" | "typing" | "confined" | "free";
+  activity: "idle" | "focused" | "confined" | "free";
   paused: boolean;
 }
 
