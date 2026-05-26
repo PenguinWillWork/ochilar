@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
