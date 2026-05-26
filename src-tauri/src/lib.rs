@@ -496,6 +496,9 @@ fn drift_ease(t: f32, dwell_frac: f32) -> f32 {
 // Global guard so only one drift animation thread runs at a time.
 static DRIFT_RUNNING: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
 
+// The path/shape/timing params map 1:1 to the JS invoke call; a wrapper struct
+// would just add a nesting layer on both sides.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 fn drift_start(
     from_x: i32,
