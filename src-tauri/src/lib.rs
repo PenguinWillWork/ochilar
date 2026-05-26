@@ -621,6 +621,10 @@ fn set_window_skip_states(title: &'static str) {
             Some(w) => w,
             None => return,
         };
+        // Let the WM finish managing the window (it applies alwaysOnTop, which
+        // rewrites _NET_WM_STATE) before we add our skip atoms — otherwise a
+        // late state write can clobber them.
+        thread::sleep(Duration::from_millis(500));
 
         let intern = |name: &[u8]| -> u32 {
             conn.intern_atom(false, name)
@@ -651,6 +655,14 @@ fn set_window_skip_states(title: &'static str) {
         send_add(skip_taskbar, skip_pager);
         send_add(skip_switcher, 0);
         let _ = conn.flush();
+        // Re-assert once more after a beat, in case a late WM state write
+        // (e.g. alwaysOnTop) landed between our send and now. Keep the
+        // connection alive briefly so the server forwards the events to KWin.
+        thread::sleep(Duration::from_millis(1200));
+        send_add(skip_taskbar, skip_pager);
+        send_add(skip_switcher, 0);
+        let _ = conn.flush();
+        thread::sleep(Duration::from_millis(300));
     });
 }
 
@@ -708,14 +720,12 @@ pub fn run() {
             reset_screen_gamma
         ])
         .setup(|app| {
-            if let Some(win) = app.get_webview_window("overlay") {
-                let _ = win.set_ignore_cursor_events(true);
-            }
-            if let Some(win) = app.get_webview_window("dim_layer") {
-                let _ = win.set_ignore_cursor_events(true);
-            }
-            if let Some(win) = app.get_webview_window("drift_layer") {
-                let _ = win.set_ignore_cursor_events(true);
+            for label in ["overlay", "dim_layer", "drift_layer"] {
+                if let Some(win) = app.get_webview_window(label) {
+                    let _ = win.set_ignore_cursor_events(true);
+                    // Tauri/tao's own EWMH path for taskbar+pager exclusion.
+                    let _ = win.set_skip_taskbar(true);
+                }
             }
 
             // Closing the control window only hides it (the app lives in the
