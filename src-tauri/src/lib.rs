@@ -12,6 +12,7 @@ use tauri::{
     Emitter, Manager, WebviewUrl, WebviewWindowBuilder,
 };
 use x11rb::connection::Connection;
+use x11rb::rust_connection::RustConnection;
 use x11rb::protocol::shape::{ConnectionExt as _, SK, SO};
 use x11rb::protocol::xproto::{
     AtomEnum, ChangeGCAux, ClientMessageEvent, ConnectionExt as _, CreateGCAux, EventMask,
@@ -60,41 +61,54 @@ fn set_overlay_opacity(opacity: f32) {
     set_window_opacity_xprop(OVERLAY_WINDOW_TITLE, opacity);
 }
 
-// Query real system idle time (ms since last keyboard/mouse input) via the
-// X11 ScreenSaver extension. Works regardless of window focus / click-through,
+// These two commands are polled every 400ms, so they share ONE persistent X11
+// connection instead of opening a fresh one each call — connect-per-poll churn
+// stresses the X server's client table over a long session. The connection is
+// dropped and re-made only if a query fails (e.g. the server restarted).
+static POLL_CONN: Mutex<Option<(RustConnection, Window)>> = Mutex::new(None);
+
+fn poll_query<T>(f: impl FnOnce(&RustConnection, Window) -> Option<T>) -> Option<T> {
+    let mut guard = POLL_CONN.lock().unwrap_or_else(|e| e.into_inner());
+    if guard.is_none() {
+        let (conn, screen) = x11rb::connect(None).ok()?;
+        let root = conn.setup().roots[screen].root;
+        *guard = Some((conn, root));
+    }
+    let result = guard.as_ref().and_then(|(conn, root)| f(conn, *root));
+    if result.is_none() {
+        *guard = None; // drop the (possibly dead) connection; reconnect next call
+    }
+    result
+}
+
+// Real system idle time (ms since last keyboard/mouse input) via the X11
+// ScreenSaver extension. Works regardless of window focus / click-through,
 // unlike DOM input events which the overlay never receives.
 #[tauri::command]
 fn system_idle_ms() -> u32 {
     use x11rb::protocol::screensaver::ConnectionExt as _;
-    let (conn, screen_num) = match x11rb::connect(None) {
-        Ok(c) => c,
-        Err(_) => return 0,
-    };
-    let root = conn.setup().roots[screen_num].root;
-    match conn
-        .screensaver_query_info(root)
-        .ok()
-        .and_then(|c| c.reply().ok())
-    {
-        Some(info) => info.ms_since_user_input,
-        None => 0,
-    }
+    poll_query(|conn, root| {
+        conn.screensaver_query_info(root)
+            .ok()?
+            .reply()
+            .ok()
+            .map(|info| info.ms_since_user_input)
+    })
+    .unwrap_or(0)
 }
 
-// Global cursor position (root coordinates). Queried once per drift to place
-// the cue away from where the user is likely looking. Reads only (x, y) —
-// no input content, nothing stored or sent anywhere.
+// Global cursor position (root coordinates). Reads only (x, y) — no input
+// content, nothing stored or sent anywhere.
 #[tauri::command]
 fn pointer_pos() -> (i32, i32) {
-    let (conn, screen_num) = match x11rb::connect(None) {
-        Ok(c) => c,
-        Err(_) => return (0, 0),
-    };
-    let root = conn.setup().roots[screen_num].root;
-    match conn.query_pointer(root).ok().and_then(|c| c.reply().ok()) {
-        Some(r) => (r.root_x as i32, r.root_y as i32),
-        None => (0, 0),
-    }
+    poll_query(|conn, root| {
+        conn.query_pointer(root)
+            .ok()?
+            .reply()
+            .ok()
+            .map(|r| (r.root_x as i32, r.root_y as i32))
+    })
+    .unwrap_or((0, 0))
 }
 
 // --- Settings persistence (JSON file in the app config dir) ---
