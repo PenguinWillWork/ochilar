@@ -46,6 +46,6 @@ npm run tauri build    # build an installable (.rpm / .deb)
 
 - X11 only. It leans on X11-specific things (the ScreenSaver extension, SHAPE,
   RandR gamma, window-opacity atoms), so it does not run on Wayland.
-- Built and tested on Fedora KDE (KWin). A good chunk of the overlay code is
+- Built and tested on Fedora KDE (KWin) and Gnome Ubuntu. A good chunk of the overlay code is
   working around how KWin composites transparent click-through windows.
 
